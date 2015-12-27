@@ -32,7 +32,7 @@ function _readStats(statsFilePath) {
 }
 
 function readStats(statsFilePath, key) {
-  const json = _readStats(statsFilePath);
+  var json = _readStats(statsFilePath);
   return json[key];
 }
 
