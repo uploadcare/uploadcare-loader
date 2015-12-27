@@ -9,7 +9,7 @@ npm install --save whitescape/uploadcare-loader
 or
 
 ```bash
-npm install --save whitescape/uploadcare-loader
+npm install --save-dev whitescape/uploadcare-loader
 ```
 
 ## Usage
