@@ -50,12 +50,13 @@ function checkOrCreateStatFile(statsFilePath, callback) {
 // TODO: add get away from loop. good for now.
 function checkFileInStats(statsFilePath, resourcePath, resourceHash, callback) {
   var _this = this;
-  var checArgs = arguments;
+  var checkArgs = arguments;
+
   return jsonfile.readFile(statsFilePath, function(err, obj) {
     if (err) {
       console.log('[uploadcare] error checking file in stats: '.red, err);
       return setTimeout(function() {
-        checkFileInStats.apply(_this, checArgs);
+        checkFileInStats.apply(_this, checkArgs);
       }, 10);
     } else {
       var file = obj[resourcePath];
