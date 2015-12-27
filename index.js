@@ -78,11 +78,13 @@ module.exports = function(source) {
   // query params...
   // ugh...
   var query = loaderUtils.parseQuery(this.query);
+  var resourceQuery = loaderUtils.parseQuery(this.resourceQuery);
   var publicKey = query.publicKey || 'demopublickey';
   var privateKey = query.privateKey || 'demoprivatekey';
   var statsFilePath = query.statsFilePath || './uploadcare-stats.json';
   var resourcePathDivider = query.resourcePathDivider || 'app';
   var uploadcareCDN = query.uploadcareCDN || '';
+  var operations = resourceQuery.operations || '';
 
   getUcId(
     uploadcareFactory(publicKey, privateKey),
@@ -96,7 +98,7 @@ module.exports = function(source) {
       }
 
       if (loaderCallback) {
-        return loaderCallback(null, 'module.exports = "https://ucarecdn.com/' + ucId + '/"');
+        return loaderCallback(null, 'module.exports = "https://ucarecdn.com/' + ucId + '/' + operations + '"');
       }
 
       return;
