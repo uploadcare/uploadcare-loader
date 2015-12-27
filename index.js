@@ -99,7 +99,7 @@ function uploadFileAndWriteToStats(resourcePath, resourceHash, uploadcare, stats
 
         if (loaderCallback) {
           loaderCallback(null, 'module.exports = "https://ucarecdn.com/' + res.file + '/"');
-          uploadArgs[4] = null;
+          uploadArgs['4'] = null;
         }
       });
     });
