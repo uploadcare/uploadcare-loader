@@ -96,7 +96,9 @@ function uploadFileAndWriteToStats(resourcePath, resourceHash, uploadcare, stats
       jsonfile.writeFile(statsFilePath, obj, {spaces: 2}, function(err) {
         if (err) console.log('writing error: ', err);
 
-        loaderCallback(null, 'module.exports = "https://ucarecdn.com/' + res.file + '/"');
+        if (loaderCallback) {
+          loaderCallback(null, 'module.exports = "https://ucarecdn.com/' + res.file + '/"');
+        }
       });
     });
   });
@@ -142,8 +144,9 @@ module.exports = function(source) {
 
     // checking or uploading file and writing stats
     var uploadedFile = checkFileInStats(statsFilePath, resourceRelativePath, resourceHash, function(err, res) {
-      if (res) {
+      if (res && loaderCallback) {
         loaderCallback(null, 'module.exports = "https://ucarecdn.com/' + res.file + '/"');
+        loaderCallback = null;
         console.log('[uploadcare]: file uuid fetched from cache: '.green, resourceRelativePath.underline)
       } else {
         uploadFileAndWriteToStats(resourceRelativePath, resourceHash, uploadcare, statsFilePath, loaderCallback)
