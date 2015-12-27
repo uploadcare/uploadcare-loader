@@ -17,7 +17,7 @@ In Webpack config:
 
 ```js
 {
-  test: /\.(jpg|png|gif)$/,
+  test: /\.(jpg|png|gif)(\?{1}.*)?$/, // for support with operations
   loader: 'uploadcare',
   query: {
     publicKey: 'PUBLIC_KEY',

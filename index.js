@@ -79,6 +79,7 @@ module.exports = function(source) {
   // ugh...
   var query = loaderUtils.parseQuery(this.query);
   var resourceQuery = loaderUtils.parseQuery(this.resourceQuery);
+
   var publicKey = query.publicKey || 'demopublickey';
   var privateKey = query.privateKey || 'demoprivatekey';
   var statsFilePath = query.statsFilePath || './uploadcare-stats.json';
