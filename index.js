@@ -54,7 +54,7 @@ function checkFileInStats(statsFilePath, resourcePath, resourceHash, callback) {
   return jsonfile.readFile(statsFilePath, function(err, obj) {
     if (err) {
       console.log('[uploadcare] error checking file in stats: '.red, err);
-      setTimeout(function() {
+      return setTimeout(function() {
         checkFileInStats.apply(_this, checArgs);
       }, 10);
     } else {
@@ -81,7 +81,8 @@ function uploadFileAndWriteToStats(resourcePath, resourceHash, uploadcare, stats
     jsonfile.readFile(statsFilePath, function(err, obj) {
       if (err) {
         console.log('[uploadcare] error reading stats file: '.red, err);
-        setTimeout(function() {
+
+        return setTimeout(function() {
           uploadFileAndWriteToStats.apply(_this, uploadArgs);
         }, 10);
       }
