@@ -23,7 +23,7 @@ In Webpack config:
     publicKey: 'PUBLIC_KEY',
     privateKey: 'PRIVATE_KEY',
     statsFilePath: path.join(__dirname, 'build', 'uploadcare.json'),
-    resoursePathDivider: 'app',
+    resourcePathDivider: 'app',
   },
 },
 ```
