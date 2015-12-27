@@ -43,34 +43,24 @@ function updateStats(statsFilePath, key, info) {
   fs.writeFileSync(statsFilePath, content);
 }
 
-function upload(uploadcare, path, cb) {
-  uploadcare.file.upload(fs.createReadStream(path), function(err, res) {
-    if (err) {
-      cb(err);
-      return;
-    }
-    cb(null, res.file);
-  });
-}
-
 function getUcId(uploadcare, statsFilePath, filePath, fileKey, fileHash, cb) {
   var info = readStats(statsFilePath, fileKey);
   if (info && info.hash === fileHash) {
     cb(null, info.ucId);
     return;
   }
-  upload(uploadcare, filePath, function(err, ucId) {
+  uploadcare.file.upload(fs.createReadStream(filePath), function(err, res) {
     if (err) {
       cb(err);
       return;
     }
     try {
-      updateStats(statsFilePath, fileKey, {hash: fileHash, ucId: ucId});
+      updateStats(statsFilePath, fileKey, {hash: fileHash, ucId: res.file});
     } catch (e) {
       cb(e);
       return;
     }
-    cb(null, ucId);
+    cb(null, res.file);
   })
 }
 
