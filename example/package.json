@@ -1,0 +1,10 @@
+{
+  "name": "example",
+  "private": true,
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "webpack": "1.12.9"
+  }
+}
