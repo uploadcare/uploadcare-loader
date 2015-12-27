@@ -2,7 +2,9 @@
   "name": "example",
   "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack",
+    "log": "node ./public/bundle.js"
   },
   "dependencies": {
     "webpack": "1.12.9"

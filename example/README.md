@@ -5,8 +5,8 @@ To run this example:
 ```
 cd example
 npm install
-webpack
-node public/bundle.js
+npm run build
+npm run log
 ```
 
 You should see an output like this:
