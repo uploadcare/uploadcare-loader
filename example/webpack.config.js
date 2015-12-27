@@ -1,9 +1,9 @@
-var path = require('path')
+var path = require('path');
 
 module.exports = {
-  entry: './src/entry',
+  entry: path.join(__dirname, 'src', 'entry.js'),
   output: {
-    path: './public',
+    path: path.join(__dirname, 'public'),
     filename: 'bundle.js',
   },
   module: {
@@ -19,5 +19,5 @@ module.exports = {
         },
       },
     ],
-  }
-}
+  },
+};
