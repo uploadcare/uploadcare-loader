@@ -49,10 +49,14 @@ function checkOrCreateStatFile(statsFilePath, callback) {
 
 // TODO: add get away from loop. good for now.
 function checkFileInStats(statsFilePath, resourcePath, resourceHash, callback) {
+  var _this = this;
+  var checArgs = arguments;
   return jsonfile.readFile(statsFilePath, function(err, obj) {
     if (err) {
       console.log('[uploadcare] error checking file in stats: '.red, err);
-      checkFileInStats.apply(this, arguments);
+      setTimeout(function() {
+        checkFileInStats.apply(_this, checArgs);
+      }, 10);
     } else {
       var file = obj[resourcePath];
 
@@ -77,7 +81,9 @@ function uploadFileAndWriteToStats(resourcePath, resourceHash, uploadcare, stats
     jsonfile.readFile(statsFilePath, function(err, obj) {
       if (err) {
         console.log('[uploadcare] error reading stats file: '.red, err);
-        uploadFileAndWriteToStats.apply(_this, uploadArgs);
+        setTimeout(function() {
+          uploadFileAndWriteToStats.apply(_this, uploadArgs);
+        }, 10);
       }
 
       obj = obj || {}
