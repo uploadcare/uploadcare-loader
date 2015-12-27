@@ -80,6 +80,8 @@ function uploadFileAndWriteToStats(resourcePath, resourceHash, uploadcare, stats
         uploadFileAndWriteToStats.apply(_this, uploadArgs);
       }
 
+      obj = obj || {}
+
       obj[resourcePath] = {
         file: res.file,
         hash: resourceHash,
