@@ -1,15 +1,6 @@
 var uploadcareFactory = require('uploadcare/lib/main');
 var fs = require('fs');
 var loaderUtils = require('loader-utils');
-var jsonfile = require('jsonfile');
-var crypto = require('crypto');
-var colors = require('colors');
-
-
-// TODO: implement logger;
-function logger(systemText, value, level) {
-}
-
 
 // problem: resourcePath is absolute:
 // /Users/romanonthego/Code/whitescape2015/app/images/background/wide_desk.jpg
@@ -26,92 +17,63 @@ function relativePath(resourcePath, resourcePathDivider) {
   var dividerIndex = pathSplited.indexOf(resourcePathDivider);
 
   return pathSplited.splice(dividerIndex).join('/')
-};
+}
 
+function _readStats(statsFilePath) {
+  var content;
+  try {
+    content = fs.readFileSync(statsFilePath);
+  } catch (e) {
+    // this is probably because the stats file was't created yet,
+    // so we return the same result as if the file was empty.
+    return {};
+  }
+  return JSON.parse(content);
+}
 
-// TODO: pass callback here as it is async?
-function checkOrCreateStatFile(statsFilePath, callback) {
-  jsonfile.readFile(statsFilePath, function(err, obj) {
+function readStats(statsFilePath, key) {
+  const json = _readStats(statsFilePath);
+  return json[key];
+}
+
+function updateStats(statsFilePath, key, info) {
+  var json = _readStats(statsFilePath);
+  json[key] = info;
+  var content = JSON.stringify(json, null, 2);
+  fs.writeFileSync(statsFilePath, content);
+}
+
+function upload(uploadcare, path, cb) {
+  uploadcare.file.upload(fs.createReadStream(path), function(err, res) {
     if (err) {
-      console.log('[uploadcare] creating stats file in '.green + "" + statsFilePath + "".underline);
-
-      fs.writeFile(statsFilePath, "{}", function (err) {
-        if (err) console.error('[uploadcare] error creating stats file: '.red, "" + err + "".underline);
-
-        callback(err);
-      })
-    } else {
-      callback(null);
+      cb(err);
+      return;
     }
-  })
-};
-
-
-// TODO: add get away from loop. good for now.
-function checkFileInStats(statsFilePath, resourcePath, resourceHash, callback) {
-  var _this = this;
-  var checkArgs = arguments;
-
-  console.log('statsFilePath', statsFilePath);
-
-  return jsonfile.readFile(statsFilePath, function(err, obj) {
-    if (err) {
-      console.log('[uploadcare] error checking file in stats: '.red, err);
-      return setTimeout(function() {
-        checkFileInStats.apply(_this, checkArgs);
-      }, 10);
-    } else {
-      var file = obj[resourcePath];
-
-      if (file && file.hash === resourceHash) {
-        callback(null, file)
-      } else {
-        callback(null, null)
-      }
-    }
-  })
-};
-
-
-// TODO: prevent infinite loop?
-function uploadFileAndWriteToStats(resourcePath, resourceHash, uploadcare, statsFilePath, loaderCallback) {
-  var uploadArgs = arguments;
-  var _this = this;
-
-  uploadcare.file.upload(fs.createReadStream(resourcePath), function(err, res){
-    if (err) return loaderCallback(err);
-
-    jsonfile.readFile(statsFilePath, function(err, obj) {
-      if (err) {
-        console.log('[uploadcare] error reading stats file: '.red, err);
-
-        return setTimeout(function() {
-          uploadFileAndWriteToStats.apply(_this, uploadArgs);
-        }, 10);
-      }
-
-      obj = obj || {}
-
-      obj[resourcePath] = {
-        file: res.file,
-        hash: resourceHash,
-      }
-
-      jsonfile.writeFile(statsFilePath, obj, {spaces: 2}, function(err) {
-        if (err) console.log('writing error: ', err);
-
-        if (loaderCallback) {
-          loaderCallback(null, 'module.exports = "https://ucarecdn.com/' + res.file + '/"');
-          loaderCallback = null;
-          uploadArgs['4'] = null;
-        }
-      });
-    });
+    cb(null, res.file);
   });
-};
+}
 
+function getUcId(uploadcare, statsFilePath, filePath, fileKey, fileHash, cb) {
+  var info = readStats(statsFilePath, fileKey);
+  if (info && info.hash === fileHash) {
+    cb(null, info.ucId);
+    return;
+  }
+  upload(uploadcare, filePath, function(err, ucId) {
+    if (err) {
+      cb(err);
+      return;
+    }
+    try {
+      updateStats(statsFilePath, fileKey, {hash: fileHash, ucId: ucId});
+    } catch (e) {
+      cb(e);
+      return;
+    }
+    cb(null, ucId);
+  })
+}
 
-// loader function
 module.exports = function(source) {
   var loaderCallback = this.async();
 
@@ -119,6 +81,9 @@ module.exports = function(source) {
   // acording to docs it's a super-safe fallback, will never be used.
   if (!loaderCallback) return source;
 
+  // should be cacheable
+  // as far as i know this is actually will prevent even cache check if hash does not changed.
+  this.cacheable();
 
   // query params...
   // ugh...
@@ -129,38 +94,20 @@ module.exports = function(source) {
   var resourcePathDivider = query.resourcePathDivider || 'app';
   var uploadcareCDN = query.uploadcareCDN || '';
 
-  var uploadcare = uploadcareFactory(publicKey, privateKey);
-
-  // path and hash. we will need both to determine if we could use cached file
-  // TODO: move it to uploadcare service? should not they have some hash validation?
-  // for you know - reuse resource instead of bluntly duplicating files?
-  var resourcePath = this.resourcePath;
-  var resourceRelativePath = relativePath(resourcePath, resourcePathDivider);
-  var resourceHash = loaderUtils.getHashDigest(source, 'sha1', 'hex', 36);
-
-  // should be cacheable
-  // as far as i know this is actually will prevent even cache check if hash does not changed.
-  this.cacheable();
-
-  // checking or creating stats file
-  var statsFile = checkOrCreateStatFile(statsFilePath,function(err) {
-    if (err) {
-      return checkOrCreateStatFile.apply(this, arguments);
-    }
-
-    // checking or uploading file and writing stats
-    var uploadedFile = checkFileInStats(statsFilePath, resourceRelativePath, resourceHash, function(err, res) {
-      if (res && loaderCallback) {
-        loaderCallback(null, 'module.exports = "https://ucarecdn.com/' + res.file + '/"');
-        loaderCallback = null;
-        console.log('[uploadcare]: file uuid fetched from cache: '.green, resourceRelativePath.underline)
-      } else {
-        uploadFileAndWriteToStats(resourceRelativePath, resourceHash, uploadcare, statsFilePath, loaderCallback)
-        console.log('[uploadcare]: uploading new file: '.yellow, resourceRelativePath.underline)
+  getUcId(
+    uploadcareFactory(publicKey, privateKey),
+    statsFilePath,
+    this.resourcePath,
+    relativePath(this.resourcePath, resourcePathDivider),
+    loaderUtils.getHashDigest(source, 'sha1', 'hex', 36),
+    function(err, ucId) {
+      if (err) {
+        loaderCallback(err);
+        return;
       }
-    });
-  });
-
+      loaderCallback(null, 'module.exports = "https://ucarecdn.com/' + ucId + '/"')
+    }
+  )
 
 };
 
