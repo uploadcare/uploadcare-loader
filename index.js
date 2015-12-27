@@ -49,10 +49,15 @@ function checkOrCreateStatFile(statsFilePath, callback) {
 
 // TODO: add get away from loop. good for now.
 function checkFileInStats(statsFilePath, resourcePath, resourceHash, callback) {
+  var _this = this;
+  var checkArgs = arguments;
+
   return jsonfile.readFile(statsFilePath, function(err, obj) {
     if (err) {
       console.log('[uploadcare] error checking file in stats: '.red, err);
-      checkFileInStats.apply(this, arguments);
+      return setTimeout(function() {
+        checkFileInStats.apply(_this, checkArgs);
+      }, 10);
     } else {
       var file = obj[resourcePath];
 
@@ -68,17 +73,22 @@ function checkFileInStats(statsFilePath, resourcePath, resourceHash, callback) {
 
 // TODO: prevent infinite loop?
 function uploadFileAndWriteToStats(resourcePath, resourceHash, uploadcare, statsFilePath, loaderCallback) {
+  var uploadArgs = arguments;
+  var _this = this;
+
   uploadcare.file.upload(fs.createReadStream(resourcePath), function(err, res){
     if (err) return callback(err);
-
-    var args = arguments;
-    var _this = this;
 
     jsonfile.readFile(statsFilePath, function(err, obj) {
       if (err) {
         console.log('[uploadcare] error reading stats file: '.red, err);
-        uploadFileAndWriteToStats.apply(_this, args);
+
+        return setTimeout(function() {
+          uploadFileAndWriteToStats.apply(_this, uploadArgs);
+        }, 10);
       }
+
+      obj = obj || {}
 
       obj[resourcePath] = {
         file: res.file,
@@ -88,7 +98,10 @@ function uploadFileAndWriteToStats(resourcePath, resourceHash, uploadcare, stats
       jsonfile.writeFile(statsFilePath, obj, {spaces: 2}, function(err) {
         if (err) console.log('writing error: ', err);
 
-        loaderCallback(null, 'module.exports = "https://ucarecdn.com/' + res.file + '/"');
+        if (loaderCallback) {
+          loaderCallback(null, 'module.exports = "https://ucarecdn.com/' + res.file + '/"');
+          uploadArgs['4'] = null;
+        }
       });
     });
   });
@@ -134,8 +147,9 @@ module.exports = function(source) {
 
     // checking or uploading file and writing stats
     var uploadedFile = checkFileInStats(statsFilePath, resourceRelativePath, resourceHash, function(err, res) {
-      if (res) {
+      if (res && loaderCallback) {
         loaderCallback(null, 'module.exports = "https://ucarecdn.com/' + res.file + '/"');
+        loaderCallback = null;
         console.log('[uploadcare]: file uuid fetched from cache: '.green, resourceRelativePath.underline)
       } else {
         uploadFileAndWriteToStats(resourceRelativePath, resourceHash, uploadcare, statsFilePath, loaderCallback)
