@@ -91,16 +91,12 @@ module.exports = function(source) {
     relativePath(this.resourcePath, resourcePathDivider),
     loaderUtils.getHashDigest(source, 'sha1', 'hex', 36),
     function(err, ucId) {
-      if (err && loaderCallback) {
-        loaderCallback(err);
-        loaderCallback = null;
-        return;
+      if (err) {
+        return loaderCallback(err);
       }
 
       if (loaderCallback) {
-        loaderCallback(null, 'module.exports = "https://ucarecdn.com/' + ucId + '/"');
-        loaderCallback = null;
-        return;
+        return loaderCallback(null, 'module.exports = "https://ucarecdn.com/' + ucId + '/"');
       }
 
       return;
