@@ -22,5 +22,12 @@
   "bugs": {
     "url": "https://github.com/whitescape/uploadcare-loader/issues"
   },
-  "homepage": "https://github.com/whitescape/uploadcare-loader#readme"
+  "homepage": "https://github.com/whitescape/uploadcare-loader#readme",
+  "dependencies": {
+    "colors": "^1.1.2",
+    "crypto": "0.0.3",
+    "jsonfile": "^2.2.3",
+    "loader-utils": "^0.2.12",
+    "uploadcare": "^0.4.1"
+  }
 }
