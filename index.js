@@ -24,7 +24,7 @@ function _readStats(statsFilePath) {
   try {
     content = fs.readFileSync(statsFilePath);
   } catch (e) {
-    // this is probably because the stats file was't created yet,
+    // this is probably because the stats file wasn't created yet,
     // so we return the same result as if the file was empty.
     return {};
   }
