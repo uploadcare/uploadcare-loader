@@ -68,16 +68,16 @@ function checkFileInStats(statsFilePath, resourcePath, resourceHash, callback) {
 
 // TODO: prevent infinite loop?
 function uploadFileAndWriteToStats(resourcePath, resourceHash, uploadcare, statsFilePath, loaderCallback) {
+  var uploadArgs = arguments;
+  var _this = this;
+
   uploadcare.file.upload(fs.createReadStream(resourcePath), function(err, res){
     if (err) return callback(err);
-
-    var args = arguments;
-    var _this = this;
 
     jsonfile.readFile(statsFilePath, function(err, obj) {
       if (err) {
         console.log('[uploadcare] error reading stats file: '.red, err);
-        uploadFileAndWriteToStats.apply(_this, args);
+        uploadFileAndWriteToStats.apply(_this, uploadArgs);
       }
 
       obj[resourcePath] = {
