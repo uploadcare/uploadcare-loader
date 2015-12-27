@@ -52,6 +52,8 @@ function checkFileInStats(statsFilePath, resourcePath, resourceHash, callback) {
   var _this = this;
   var checkArgs = arguments;
 
+  console.log('statsFilePath', statsFilePath);
+
   return jsonfile.readFile(statsFilePath, function(err, obj) {
     if (err) {
       console.log('[uploadcare] error checking file in stats: '.red, err);
@@ -77,7 +79,7 @@ function uploadFileAndWriteToStats(resourcePath, resourceHash, uploadcare, stats
   var _this = this;
 
   uploadcare.file.upload(fs.createReadStream(resourcePath), function(err, res){
-    if (err) return callback(err);
+    if (err) return loaderCallback(err);
 
     jsonfile.readFile(statsFilePath, function(err, obj) {
       if (err) {
@@ -100,6 +102,7 @@ function uploadFileAndWriteToStats(resourcePath, resourceHash, uploadcare, stats
 
         if (loaderCallback) {
           loaderCallback(null, 'module.exports = "https://ucarecdn.com/' + res.file + '/"');
+          loaderCallback = null;
           uploadArgs['4'] = null;
         }
       });
