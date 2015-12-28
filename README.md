@@ -17,7 +17,7 @@ In Webpack config:
 
 ```js
 {
-  test: /\.(jpg|png|gif)(\?{1}.*)?$/, // for support with operations
+  test: /\.(jpg|png|gif)(\?{1}.*)?$/, // for operations query support
   loader: 'uploadcare',
   query: {
     publicKey: 'PUBLIC_KEY',
@@ -33,7 +33,7 @@ In Webpack config:
 
 ..oh, yeah, configuration..
 
-### `test: /\.(jpg|png|gif)(\?{1}.*)?$/`
+#### `test: /\.(jpg|png|gif)(\?{1}.*)?$/`
 Notice how it is much uglier than reguar `/\.(jpg|png|gif)$/` you could see in nearly any webpack docs or tutorials?
 It's because simplier regex does not account for `resourseQuery` part of the `require()` call.
 You may or may not know but `require('./assets/img.png?foo=bar')` is a valid request call and query will be passed and parsed as {foo: 'bar'} by loader if needed.
@@ -101,14 +101,18 @@ which will result in cache miss in different environment; so we need to make pat
 So `resourcePathDivider` is used to split relative path part from absolute part of the path.
 default is `app`, you will probably need `src` or something.
 
-### `uploadcareCDN`
+#### `uploadcareCDN`
 CDN provider. you could read more [here](https://uploadcare.com/documentation/cdn/).
 Default is `ucarecdn.com`;
 
 valid values:
+
 `c7.ucarecdn.com` for CDN77
+
 `kx.ucarecdn.com` for KeyCDN
+
 `cfr.ucarecdn.com` for Amazon CloudFront
+
 
 if guys from Uploadcare came up with new providers you should be able to just toss it in.
 
