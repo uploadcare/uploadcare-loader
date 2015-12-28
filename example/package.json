@@ -7,6 +7,7 @@
     "log": "node ./public/bundle.js"
   },
   "dependencies": {
+    "css-loader": "0.23.1",
     "webpack": "1.12.9"
   }
 }

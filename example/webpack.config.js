@@ -9,13 +9,14 @@ module.exports = {
   module: {
     loaders: [
       {
-        test: /\.(jpg|png|gif)$/,
+        test: /\.(jpg|png|gif)(\?{1}.*)?$/,
         loader: '../../index.js',
         query: {
           publicKey: 'demopublickey',
           privateKey: 'demoprivatekey',
           statsFilePath: path.join(__dirname, 'public', 'uploadcare.json'),
           resourcePathDivider: 'src',
+          uploadcareCDN: 'c7.ucarecdn.com',
         },
       },
     ],
