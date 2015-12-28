@@ -19,8 +19,10 @@ function relativePath(resourcePath, resourcePathDivider) {
   return pathSplited.splice(dividerIndex).join('/')
 }
 
+
 function _readStats(statsFilePath) {
   var content;
+
   try {
     content = fs.readFileSync(statsFilePath);
   } catch (e) {
@@ -31,31 +33,38 @@ function _readStats(statsFilePath) {
   return JSON.parse(content);
 }
 
+
 function readStats(statsFilePath, key) {
   var json = _readStats(statsFilePath);
   return json[key];
 }
 
+
 function updateStats(statsFilePath, key, info) {
   var json = _readStats(statsFilePath);
   json[key] = info;
+
   var content = JSON.stringify(json, null, 2);
+
   fs.writeFileSync(statsFilePath, content);
 }
 
-function getUcId(uploadcare, statsFilePath, filePath, fileKey, fileHash, cb) {
+
+function getUploadcareUUID(uploadcare, statsFilePath, filePath, fileKey, fileHash, cb) {
   var info = readStats(statsFilePath, fileKey);
+
   if (info && info.hash === fileHash) {
-    cb(null, info.ucId);
+    cb(null, info.uuid);
     return;
   }
+
   uploadcare.file.upload(fs.createReadStream(filePath), function(err, res) {
     if (err) {
       cb(err);
       return;
     }
     try {
-      updateStats(statsFilePath, fileKey, {hash: fileHash, ucId: res.file});
+      updateStats(statsFilePath, fileKey, {hash: fileHash, uuid: res.file});
     } catch (e) {
       cb(e);
       return;
@@ -63,6 +72,8 @@ function getUcId(uploadcare, statsFilePath, filePath, fileKey, fileHash, cb) {
     cb(null, res.file);
   })
 }
+
+
 
 module.exports = function(source) {
   var loaderCallback = this.async();
@@ -84,22 +95,24 @@ module.exports = function(source) {
   var privateKey = query.privateKey || 'demoprivatekey';
   var statsFilePath = query.statsFilePath || './uploadcare-stats.json';
   var resourcePathDivider = query.resourcePathDivider || 'app';
-  var uploadcareCDN = query.uploadcareCDN || '';
-  var operations = resourceQuery.operations || '';
+  var uploadcareCDN = query.uploadcareCDN || 'ucarecdn.com';
+  // operations or closing slash
+  // operations should start with '/-/'
+  var operations = resourceQuery.operations || '/';
 
-  getUcId(
+  getUploadcareUUID(
     uploadcareFactory(publicKey, privateKey),
     statsFilePath,
     this.resourcePath,
     relativePath(this.resourcePath, resourcePathDivider),
     loaderUtils.getHashDigest(source, 'sha1', 'hex', 36),
-    function(err, ucId) {
+    function(err, uuid) {
       if (err) {
         return loaderCallback(err);
       }
 
       if (loaderCallback) {
-        return loaderCallback(null, 'module.exports = "https://ucarecdn.com/' + ucId + '/' + operations + '"');
+        return loaderCallback(null, 'module.exports = "https://' + uploadcareCDN + '/' + uuid + operations + '"');
       }
 
       return;
