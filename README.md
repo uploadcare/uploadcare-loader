@@ -45,7 +45,7 @@ In Webpack config:
 
 ..oh, yeah, configuration..
 
-#### `test: /\.(jpg|png|gif)(\?{1}.*)?$/`
+##### `test: /\.(jpg|png|gif)(\?{1}.*)?$/`
 Notice how it is much uglier than reguar `/\.(jpg|png|gif)$/` you could see in nearly any webpack docs or tutorials?
 It's because simplier regex does not account for `resourseQuery` part of the `require()` call.
 You may or may not know but `require('./assets/img.png?foo=bar')` is a valid require and query will be passed and parsed as `{foo: 'bar'}` by loader if needed.
@@ -77,13 +77,13 @@ just add needed extentions to test Regex (`test: /\.(jpg|png|gif|pdf|xls|doc)(\?
 
 loader accepts following query params (with defaults):
 
-#### `publicKey`
+##### `publicKey`
 Uploadcare public key. default is `demopublickey`; more [here](https://uploadcare.com/documentation/keys/)
 
-#### `privateKey`
+##### `privateKey`
 Uploadcare private key. default is `demoprivatekey`; see above.
 
-#### `statsFilePath`
+##### `statsFilePath`
 Where to put stats file with upload results. it's basicly `json` with something like:
 
 ```js
@@ -109,7 +109,7 @@ This cache allow you to reuse files instead of uploading them over and over agai
 It is also posible, through not recomended, to keep stats file in git to speed up deploy and save uploads/usage; Better still to put this file under `gitignore` directive.
 Default is `./uploadcare-stats.json` (where `./` is relative to webpack config file).
 
-#### `resourcePathDivider`
+##### `resourcePathDivider`
 Tricky and ugly one. we yet to overcome it and produce a clear solution.
 Problem is `this.resourcePath` is absolute:
 `/Users/username/code/project/app/images/background/wide_desk.jpg`
@@ -117,7 +117,7 @@ which will result in cache miss in different environment; so we need to make pat
 So `resourcePathDivider` is used to split relative path part from absolute part of the path.
 default is `app`, you will probably need `src` or something.
 
-#### `uploadcareCDN`
+##### `uploadcareCDN`
 CDN provider. you could read more [here](https://uploadcare.com/documentation/cdn/).
 Default is `ucarecdn.com`;
 
