@@ -1,5 +1,16 @@
 # uploadcare-loader
 webpack loader with all the glory of uploadcare.com
+![uploadcare-loader awesome fusion](http://www.ucarecdn.com/ddc8f711-ee68-4b70-aed1-3b2f7e7fba2f/uploadcareloaderprod.gif)
+
+## Disclaimer
+
+### [Uploadcare](https://uploadcare.com)
+Awesome service, handles upload and croping and resizing and storinga and delivering and caching and many other things for you.
+
+
+### [Webpack](https://webpack.github.io)
+Module bundler which allow you `require` any file and use it kinda like it's a native node.js module.
+
 
 ## Instalation
 
@@ -36,16 +47,19 @@ In Webpack config:
 #### `test: /\.(jpg|png|gif)(\?{1}.*)?$/`
 Notice how it is much uglier than reguar `/\.(jpg|png|gif)$/` you could see in nearly any webpack docs or tutorials?
 It's because simplier regex does not account for `resourseQuery` part of the `require()` call.
-You may or may not know but `require('./assets/img.png?foo=bar')` is a valid request call and query will be passed and parsed as {foo: 'bar'} by loader if needed.
-So `test: /\.(jpg|png|gif)(\?{1}.*)?$/` is account for
+You may or may not know but `require('./assets/img.png?foo=bar')` is a valid require and query will be passed and parsed as `{foo: 'bar'}` by loader if needed.
+So `test: /\.(jpg|png|gif)(\?{1}.*)?$/` is handle
+
 `something.png`
+
 `something.png?foo=bar`
+
 etc.
 
 All of this is crutial for one reason: while you could use string concatination in JS like this:
 
 ```js
-<img src="${require('./assets/img.png')}-/blur/100/" />
+<img src={'${require('./assets/img.png')}-/blur/100/'} />
 ```
 you could not do anyting like it in CSS `url()` call (at least without some complicated logic in styl/sass).
 So in this case you could do
@@ -71,7 +85,7 @@ Uploadcare private key. default is `demoprivatekey`; see above.
 #### `statsFilePath`
 Where to put stats file with upload results. it's basicly `json` with something like:
 
-```json
+```js
 {
   "app/images/bg.png": {
     "hash": "15396d45d12809b8f75773f293d874910755",
@@ -89,6 +103,7 @@ Where to put stats file with upload results. it's basicly `json` with something 
   //...
 }
 ```
+
 This cache allow you to reuse files instead of uploading them over and over again.
 It is also posible, through not recomended, to keep stats file in git to speed up deploy and save uploads/usage; Better still to put this file under `gitignore` directive.
 Default is `./uploadcare-stats.json` (where `./` is relative to webpack config file).
@@ -158,7 +173,7 @@ render() {
   )
 }
 
-// results in
+// => somethere in your DOM
 // <img src="https://ucarecdn.com/960b4e3a-065f-4502-be4b-55824b9d800e/-/resize/600x/-/format/jpg/-/quality/lightest/" />
 ```
 
