@@ -1,15 +1,15 @@
 # uploadcare-loader
-webpack loader with all the glory of uploadcare.com
+webpack loader with all the glory of [Uploadcare](https://uploadcare.com)
 
 ![uploadcare-loader awesome fusion](http://www.ucarecdn.com/ddc8f711-ee68-4b70-aed1-3b2f7e7fba2f/uploadcareloaderprod.gif)
 
 ## Disclaimer
 
-### [Uploadcare](https://uploadcare.com)
+#### [Uploadcare](https://uploadcare.com)
 Awesome service, handles upload and croping and resizing and storinga and delivering and caching and many other things for you.
 
 
-### [Webpack](https://webpack.github.io)
+#### [Webpack](https://webpack.github.io)
 Module bundler which allow you `require` any file and use it kinda like it's a native node.js module.
 
 
