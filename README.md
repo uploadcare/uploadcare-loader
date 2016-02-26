@@ -13,15 +13,15 @@ Awesome service, handles upload and croping and resizing and storinga and delive
 Module bundler which allow you `require` any file and use it kinda like it's a native node.js module.
 
 
-## Instalation
+## Installation
 
 ```bash
-npm install --save whitescape/uploadcare-loader
+npm install --save uploadcare-loader
 ```
 or
 
 ```bash
-npm install --save-dev whitescape/uploadcare-loader
+npm install --save-dev uploadcare-loader
 ```
 
 ## Usage
