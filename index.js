@@ -1,6 +1,6 @@
-var uploadcareFactory = require('uploadcare/lib/main');
 var fs = require('fs');
 var loaderUtils = require('loader-utils');
+var request = require('request');
 
 // problem: resourcePath is absolute:
 // /Users/romanonthego/Code/whitescape2015/app/images/background/wide_desk.jpg
@@ -12,11 +12,10 @@ var loaderUtils = require('loader-utils');
 // ->
 // app/images/background/wide_desk.jpg
 // ---
-function relativePath(resourcePath, resourcePathDivider) {
-  var pathSplited = resourcePath.split('/');
-  var dividerIndex = pathSplited.indexOf(resourcePathDivider);
+function relativePath(resourcePath, pathAbsolutePart) {
+  var pathRelative = resourcePath.replace(pathAbsolutePart, '').substr(1)
 
-  return pathSplited.splice(dividerIndex).join('/')
+  return pathRelative
 }
 
 
@@ -50,7 +49,7 @@ function updateStats(statsFilePath, key, info) {
 }
 
 
-function getUploadcareUUID(uploadcare, statsFilePath, filePath, fileKey, fileHash, cb) {
+function getUploadcareUUID(publicKey, statsFilePath, filePath, fileKey, fileHash, storeOnUpload, cb) {
   var info = readStats(statsFilePath, fileKey);
 
   if (info && info.hash === fileHash) {
@@ -58,18 +57,28 @@ function getUploadcareUUID(uploadcare, statsFilePath, filePath, fileKey, fileHas
     return;
   }
 
-  uploadcare.file.upload(fs.createReadStream(filePath), function(err, res) {
+  request.post({
+    url: 'https://upload.uploadcare.com/base/',
+    json: true,
+    formData: {
+      UPLOADCARE_PUB_KEY: publicKey,
+      UPLOADCARE_STORE: storeOnUpload ? 1 : 0,
+      file: fs.createReadStream(filePath),
+    }
+  }, function(err, resp, body) {
     if (err) {
       cb(err);
       return;
     }
+
     try {
-      updateStats(statsFilePath, fileKey, {hash: fileHash, uuid: res.file});
+      updateStats(statsFilePath, fileKey, {hash: fileHash, uuid: body.file});
     } catch (e) {
       cb(e);
       return;
     }
-    cb(null, res.file);
+
+    cb(null, body.file);
   })
 }
 
@@ -94,18 +103,20 @@ module.exports = function(source) {
   var publicKey = query.publicKey || 'demopublickey';
   var privateKey = query.privateKey || 'demoprivatekey';
   var statsFilePath = query.statsFilePath || './uploadcare-stats.json';
-  var resourcePathDivider = query.resourcePathDivider || 'app';
+  var pathAbsolutePart = query.pathAbsolutePart;
   var uploadcareCDN = query.uploadcareCDN || 'ucarecdn.com';
+  var storeOnUpload = query.storeOnUpload || true;
   // operations or closing slash
   // operations should start with '/-/'
   var operations = resourceQuery.operations || '/';
 
   getUploadcareUUID(
-    uploadcareFactory(publicKey, privateKey),
+    publicKey,
     statsFilePath,
     this.resourcePath,
-    relativePath(this.resourcePath, resourcePathDivider),
+    relativePath(this.resourcePath, pathAbsolutePart),
     loaderUtils.getHashDigest(source, 'sha1', 'hex', 36),
+    storeOnUpload,
     function(err, uuid) {
       if (err) {
         return loaderCallback(err);
