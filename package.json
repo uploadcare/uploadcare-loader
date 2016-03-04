@@ -26,6 +26,6 @@
   "dependencies": {
     "colors": "^1.1.2",
     "loader-utils": "^0.2.12",
-    "request": "2.69.0",
+    "request": "2.69.0"
   }
 }
