@@ -36,7 +36,6 @@ In Webpack config:
     privateKey: 'PRIVATE_KEY',
     statsFilePath: path.join(__dirname, 'build', 'uploadcare.json'),
     resourcePathDivider: 'app',
-    uploadcareCDN: 'c7.ucarecdn.com',
   },
 },
 ```
@@ -116,22 +115,6 @@ Problem is `this.resourcePath` is absolute:
 which will result in cache miss in different environment; so we need to make path relative again.
 So `resourcePathDivider` is used to split relative path part from absolute part of the path.
 default is `app`, you will probably need `src` or something.
-
-##### `uploadcareCDN`
-CDN provider. you could read more [here](https://uploadcare.com/documentation/cdn/).
-Default is `ucarecdn.com`;
-
-valid values:
-
-`c7.ucarecdn.com` for CDN77
-
-`kx.ucarecdn.com` for KeyCDN
-
-`cfr.ucarecdn.com` for Amazon CloudFront
-
-
-if guys from Uploadcare came up with new providers you should be able to just toss it in.
-
 
 
 ## Awesome part
