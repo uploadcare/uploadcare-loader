@@ -33,7 +33,7 @@
   "dependencies": {
     "colors": "^1.1.2",
     "loader-utils": "^0.2.12",
-    "uploadcare": "^0.4.1"
+    "request": "2.69.0"
   },
   "devDependencies": {
     "babel": "^6.3.26",

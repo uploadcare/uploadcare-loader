@@ -1,5 +1,6 @@
-import uploadcareFactory from 'uploadcare/lib/main'
+// import uploadcareFactory from 'uploadcare/lib/main'
 import fs from 'fs'
+import request from 'request'
 import loaderUtils from 'loader-utils'
 
 const DEFAULT_OPTIONS = {
@@ -9,7 +10,10 @@ const DEFAULT_OPTIONS = {
   resourcePathDivider: 'app',
   uploadcareCDN: 'ucarecdn.com',
   operations: '/',
+  storeOnUpload: true,
 }
+
+const H24 = 24 * 60 * 60 * 1000
 
 // problem: resourcePath is absolute:
 // /Users/romanonthego/Code/whitescape2015/app/images/background/wide_desk.jpg
@@ -59,28 +63,67 @@ function updateStats(statsFilePath, key, info) {
 }
 
 
-function getUploadcareUUID({uploadcare, statsFilePath, filePath, fileKey, fileHash, callback} = {}) {
-  const info = readStats(statsFilePath, fileKey)
+function uploadFile(publicKey, filePath, storeOnUpload = 1, callback) {
+  request.post({
+    url: 'https://upload.uploadcare.com/base/',
+    json: true,
+    formData: {
+      UPLOADCARE_PUB_KEY: publicKey,
+      UPLOADCARE_STORE: storeOnUpload ? 1 : 0,
+      file: fs.createReadStream(filePath),
+    }
+  }, callback)
+}
 
-  if (info && info.hash === fileHash) {
+
+function getUploadcareUUID(options = {}) {
+  const {
+    publicKey,
+    privateKey,
+    statsFilePath,
+    filePath,
+    fileHash,
+    storeOnUpload,
+    callback,
+  } = options
+
+  const info = readStats(statsFilePath, filePath)
+
+  const isCacheValid = info && info.hash === fileHash
+  const isFileStillThere = info.stored ||
+    // special case for demo key
+    // file will be deleted in 27 hours
+    (info.publicKeyUsed === 'demopublickey' && info.dateTimeUploaded + H24 > Date.now())
+
+  if (isCacheValid && isFileStillThere) {
     callback(null, info.uuid)
     return
   }
 
-  uploadcare.file.upload(fs.createReadStream(filePath), function(err, res) {
+  uploadFile(publicKey, filePath, storeOnUpload, (err, resp, body) => {
     if (err) {
       callback(err)
       return
     }
+
     try {
-      updateStats(statsFilePath, fileKey, {hash: fileHash, uuid: res.file})
+      // we writing datetime and publick key for demopublickey use-case
+      // files uploaded with demo will be invalidated in 24 hours, there is no
+      // way to store file in uploadcare
+      updateStats(statsFilePath, filePath, {
+        hash: fileHash,
+        uuid: body.file,
+        dateTimeUploaded: Date.now(),
+        publicKeyUsed: publicKey,
+        stored: storeOnUpload,
+      })
     } catch (e) {
       callback(e)
       return
     }
-    callback(null, res.file)
+    callback(null, body.file)
   })
-}
+ }
 
 
 
@@ -109,13 +152,16 @@ export default function(source) {
     resourcePathDivider,
     uploadcareCDN,
     operations,
+    storeOnUpload,
   } = options
 
   getUploadcareUUID({
-    uploadcare: uploadcareFactory(publicKey, privateKey),
+    publicKey: publicKey,
+    privateKey: privateKey,
+    storeOnUpload: storeOnUpload,
     statsFilePath: statsFilePath,
     filePath: relativePath(this.resourcePath, resourcePathDivider),
-    hash: loaderUtils.getHashDigest(source, 'sha1', 'hex', 36),
+    fileHash: loaderUtils.getHashDigest(source, 'sha1', 'hex', 36),
     callback: (err, uuid) => {
       if (err) {
         return loaderCallback(err)
