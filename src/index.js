@@ -59,26 +59,26 @@ function updateStats(statsFilePath, key, info) {
 }
 
 
-function getUploadcareUUID(uploadcare, statsFilePath, filePath, fileKey, fileHash, cb) {
+function getUploadcareUUID({uploadcare, statsFilePath, filePath, fileKey, fileHash, callback} = {}) {
   const info = readStats(statsFilePath, fileKey)
 
   if (info && info.hash === fileHash) {
-    cb(null, info.uuid)
+    callback(null, info.uuid)
     return
   }
 
   uploadcare.file.upload(fs.createReadStream(filePath), function(err, res) {
     if (err) {
-      cb(err)
+      callback(err)
       return
     }
     try {
       updateStats(statsFilePath, fileKey, {hash: fileHash, uuid: res.file})
     } catch (e) {
-      cb(e)
+      callback(e)
       return
     }
-    cb(null, res.file)
+    callback(null, res.file)
   })
 }
 
@@ -95,26 +95,37 @@ export default function(source) {
   // as far as i know this is actually will prevent even cache check if hash does not changed.
   this.cacheable()
 
+  // building options with defaults and overrides
   const options = {
     ...DEFAULT_OPTIONS,
     ...loaderUtils.parseQuery(this.query),
     ...loaderUtils.parseQuery(this.resourceQuery),
   }
 
-  getUploadcareUUID(
-    uploadcareFactory(options.publicKey, options.privateKey),
-    options.statsFilePath,
-    this.resourcePath,
-    relativePath(this.resourcePath, options.resourcePathDivider),
-    loaderUtils.getHashDigest(source, 'sha1', 'hex', 36),
-    function(err, uuid) {
+  const {
+    publicKey,
+    privateKey,
+    statsFilePath,
+    resourcePathDivider,
+    uploadcareCDN,
+    operations,
+  } = options
+
+  getUploadcareUUID({
+    uploadcare: uploadcareFactory(publicKey, privateKey),
+    statsFilePath: statsFilePath,
+    filePath: relativePath(this.resourcePath, resourcePathDivider),
+    hash: loaderUtils.getHashDigest(source, 'sha1', 'hex', 36),
+    callback: (err, uuid) => {
       if (err) {
         return loaderCallback(err)
       }
 
       if (loaderCallback) {
-        return loaderCallback(null, `module.exports = "https://${options.uploadcareCDN}/${uuid}${options.operations}"`)
+        return loaderCallback(null,
+          `module.exports = "https://${uploadcareCDN}/${uuid}${operations}"`
+        )
       }
     }
-  )
+  })
 }

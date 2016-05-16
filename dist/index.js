@@ -17,15 +17,29 @@ exports.default = function (source) {
   // as far as i know this is actually will prevent even cache check if hash does not changed.
   this.cacheable();
 
+  // building options with defaults and overrides
   var options = _extends({}, DEFAULT_OPTIONS, _loaderUtils2.default.parseQuery(this.query), _loaderUtils2.default.parseQuery(this.resourceQuery));
 
-  getUploadcareUUID((0, _main2.default)(options.publicKey, options.privateKey), options.statsFilePath, this.resourcePath, relativePath(this.resourcePath, options.resourcePathDivider), _loaderUtils2.default.getHashDigest(source, 'sha1', 'hex', 36), function (err, uuid) {
-    if (err) {
-      return loaderCallback(err);
-    }
+  var publicKey = options.publicKey;
+  var privateKey = options.privateKey;
+  var statsFilePath = options.statsFilePath;
+  var resourcePathDivider = options.resourcePathDivider;
+  var uploadcareCDN = options.uploadcareCDN;
+  var operations = options.operations;
 
-    if (loaderCallback) {
-      return loaderCallback(null, 'module.exports = "https://' + options.uploadcareCDN + '/' + uuid + options.operations + '"');
+  getUploadcareUUID({
+    uploadcare: (0, _main2.default)(publicKey, privateKey),
+    statsFilePath: statsFilePath,
+    filePath: relativePath(this.resourcePath, resourcePathDivider),
+    hash: _loaderUtils2.default.getHashDigest(source, 'sha1', 'hex', 36),
+    callback: function callback(err, uuid) {
+      if (err) {
+        return loaderCallback(err);
+      }
+
+      if (loaderCallback) {
+        return loaderCallback(null, 'module.exports = "https://' + uploadcareCDN + '/' + uuid + operations + '"');
+      }
     }
   });
 };
@@ -97,25 +111,36 @@ function updateStats(statsFilePath, key, info) {
   _fs2.default.writeFileSync(statsFilePath, content);
 }
 
-function getUploadcareUUID(uploadcare, statsFilePath, filePath, fileKey, fileHash, cb) {
+function getUploadcareUUID() {
+  var _ref = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+
+  var uploadcare = _ref.uploadcare;
+  var statsFilePath = _ref.statsFilePath;
+  var filePath = _ref.filePath;
+  var fileKey = _ref.fileKey;
+  var fileHash = _ref.fileHash;
+  var callback = _ref.callback;
+
   var info = readStats(statsFilePath, fileKey);
 
   if (info && info.hash === fileHash) {
-    cb(null, info.uuid);
+    callback(null, info.uuid);
     return;
   }
 
   uploadcare.file.upload(_fs2.default.createReadStream(filePath), function (err, res) {
     if (err) {
-      cb(err);
+      callback(err);
       return;
     }
     try {
       updateStats(statsFilePath, fileKey, { hash: fileHash, uuid: res.file });
     } catch (e) {
-      cb(e);
+      callback(e);
       return;
     }
-    cb(null, res.file);
+    callback(null, res.file);
   });
 }
+
+module.exports = exports['default'];
