@@ -1,10 +1,11 @@
 'use strict';
 
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; /* eslint-disable no-console, no-unused-vars */
-
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; /* eslint-disable no-console, no-unused-vars */
+
 
 exports.default = function (source) {
   var loaderCallback = this.async();
@@ -27,6 +28,7 @@ exports.default = function (source) {
   var operations = options.operations;
   var storeOnUpload = options.storeOnUpload;
   var pathAbsolutePart = options.pathAbsolutePart;
+
 
   var callback = function callback(err, uuid) {
     if (err) {
@@ -95,7 +97,7 @@ function relativePath(resourcePath, pathAbsolutePart) {
 
 // read uploadcare-stats.json file
 function _readStats(statsFilePath) {
-  var content = undefined;
+  var content = void 0;
 
   try {
     content = _fs2.default.readFileSync(statsFilePath);
@@ -161,6 +163,7 @@ function getUploadcareUUID() {
   var storeOnUpload = options.storeOnUpload;
   var callback = options.callback;
 
+
   var upload = function upload() {
     uploadFile(publicKey, filePath, storeOnUpload, function (err, resp, body) {
       if (err) {
@@ -190,20 +193,17 @@ function getUploadcareUUID() {
   };
 
   var info = readStats(statsFilePath, filePath);
-
   var isFileInCache = info;
-
+  var isStored = info && info.stored;
   var isCacheValid = info && info.hash === fileHash;
-
-  var isUploadedWithDemoKey = info.publicKeyUsed === 'demopublickey';
-
+  var isUploadedWithDemoKey = info && info.publicKeyUsed === 'demopublickey';
   var isUploadedInLast24H = info && Date.now() - info.dateTimeUploaded < H24;
 
   // file should be there if
   // (uploaded with key and stored)
   // (uploaded with key, not stored, but less than 24H ago)
   // (uploaede with demo key, not stored (nor can it be), but less than 24H ago)
-  var isFileStillThere = !isUploadedWithDemoKey && info.stored || !isUploadedWithDemoKey && !info.stored && isUploadedInLast24H || isUploadedWithDemoKey && isUploadedInLast24H;
+  var isFileStillThere = info && (!isUploadedWithDemoKey && info.stored || !isUploadedWithDemoKey && !info.stored && isUploadedInLast24H || isUploadedWithDemoKey && isUploadedInLast24H);
 
   // now `state machine` :)
   if (isFileInCache) {
@@ -237,7 +237,7 @@ function getUploadcareUUID() {
       upload();
     }
   } else {
-    console.log('NEW FILE ' + filePath.underline);
+    console.log(('NEW FILE ' + filePath.underline).green);
     upload();
   }
 }

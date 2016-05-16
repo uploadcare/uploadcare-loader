@@ -128,22 +128,19 @@ function getUploadcareUUID(options = {}) {
   }
 
   const info = readStats(statsFilePath, filePath)
-
   const isFileInCache = info
-
+  const isStored = info && info.stored
   const isCacheValid = info && info.hash === fileHash
-
-  const isUploadedWithDemoKey = info.publicKeyUsed === 'demopublickey'
-
+  const isUploadedWithDemoKey = info && info.publicKeyUsed === 'demopublickey'
   const isUploadedInLast24H = info && (Date.now() - info.dateTimeUploaded < H24)
 
   // file should be there if
   // (uploaded with key and stored)
   // (uploaded with key, not stored, but less than 24H ago)
   // (uploaede with demo key, not stored (nor can it be), but less than 24H ago)
-  const isFileStillThere = (!isUploadedWithDemoKey && info.stored)
+  const isFileStillThere = info && ((!isUploadedWithDemoKey && info.stored)
       || (!isUploadedWithDemoKey && !info.stored && isUploadedInLast24H)
-      || (isUploadedWithDemoKey && isUploadedInLast24H)
+      || (isUploadedWithDemoKey && isUploadedInLast24H))
 
   // now `state machine` :)
   if (isFileInCache) {
@@ -177,7 +174,7 @@ function getUploadcareUUID(options = {}) {
       upload()
     }
   } else {
-    console.log(`NEW FILE ${filePath.underline}`)
+    console.log(`NEW FILE ${filePath.underline}`.green)
     upload()
   }
 }
