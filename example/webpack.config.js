@@ -17,6 +17,7 @@ module.exports = {
           statsFilePath: path.join(__dirname, 'public', 'uploadcare.json'),
           resourcePathDivider: 'src',
           uploadcareCDN: 'c7.ucarecdn.com',
+          pathAbsolutePart: __dirname,
         },
       },
     ],
