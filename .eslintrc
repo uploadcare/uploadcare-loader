@@ -1,0 +1,45 @@
+// to install plugins:
+// npm install --save-dev eslint@1.5.1
+// npm install --save-dev eslint-config-airbnb@0.1.0
+
+// please note versions. they should be fixed to prevent new errors from updating airbnb
+
+{
+  "extends": ["eslint:recommended", "eslint-config-airbnb"],
+  "rules": {
+    // rules
+    // partially copied from onlineeducation
+    //
+    "func-names": 0,
+    "semi": [2, "never"],
+    "no-multiple-empty-lines": [2, {"max": 3}], // allows up to 3 empty lines
+    "padded-blocks": 0,
+    "guard-for-in": 0,
+    "no-reserved-keys": 0, // it's okay in ES5+ enviroment, which is well, everywhere...
+    "react/wrap-multilines": 0,
+    "semi-spacing": 0,
+    "quotes": [1, "single"], // i dont' set this up as an error since sometimes you just need to use diferent types of quites
+    "no-trailing-spaces": [2],
+    "no-unused-vars": [2, {"vars": "all", "args": "none"}], // allows full function sinature yet disallows unused vars in blocks
+    "no-var": 2, // no var use, is well okay
+    "id-length": 0, // fuck it, we need to use (e) => and other stuff with 1 char name variables
+    // nice thing to have:
+    //
+    // up to everyone: {foo, bar,} or {foo, bar} - both are valid (for multiline obviously)
+    "comma-dangle": [0],
+    // it should not be error since it can not be used consistently
+    // see https://github.com/eslint/eslint/issues/3223 - they have good point
+    // it is a good thing to seprate destructuring into let/const blocks yet it's ugly
+    // and costly since we creating new objects :(
+    // i guess we have to wait untill destructuring assignment will be added to exeptions
+    "prefer-const": 1
+  },
+  "env": {
+    "browser": true,
+    "node": true,
+    "es6": true,
+    "jasmine": true
+  },
+  "globals": {
+  }
+}
