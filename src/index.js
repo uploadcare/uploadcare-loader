@@ -1,5 +1,6 @@
 /* eslint-disable no-console, no-unused-vars */
 import fs from 'fs'
+import path from 'path'
 import colors from 'colors'
 import request from 'request'
 import loaderUtils from 'loader-utils'
@@ -64,7 +65,7 @@ function updateStats(statsFilePath, key, info) {
 }
 
 // upload or reupload
-function uploadFile(publicKey, filePath, storeOnUpload = 1, callback) {
+function uploadFile(publicKey, filePath, fileHash, storeOnUpload = 1, callback) {
   console.log(`UPLOADING ${filePath.underline}`.yellow)
 
   request.post({
@@ -73,7 +74,12 @@ function uploadFile(publicKey, filePath, storeOnUpload = 1, callback) {
     formData: {
       UPLOADCARE_PUB_KEY: publicKey,
       UPLOADCARE_STORE: storeOnUpload ? 1 : 0,
-      file: fs.createReadStream(filePath),
+      file: {
+        value: fs.createReadStream(filePath),
+        options: {
+          filename: fileHash,
+        }
+      },
     }
   }, callback)
 }
@@ -100,7 +106,7 @@ function getUploadcareUUID(options = {}) {
   } = options
 
   const upload = () => {
-    uploadFile(publicKey, filePath, storeOnUpload, (err, resp, body) => {
+    uploadFile(publicKey, filePath, fileHash, storeOnUpload, (err, resp, body) => {
       if (err) {
         callback(err)
         return
@@ -117,7 +123,7 @@ function getUploadcareUUID(options = {}) {
           uuid: body.file,
           dateTimeUploaded: Date.now(),
           publicKeyUsed: publicKey,
-          stored: storeOnUpload,
+          stored: storeOnUpload && publicKey !== 'demopublickey',
         })
       } catch (e) {
         callback(e)
@@ -175,7 +181,37 @@ function getUploadcareUUID(options = {}) {
     }
   } else {
     console.log(`NEW FILE ${filePath.underline}`.green)
-    upload()
+
+    const deletedStats = path.join(statsFilePath, '..', 'uploadcare-deleted.json')
+    const deletedFile = readStats(deletedStats, fileHash)
+
+    console.log(deletedFile)
+
+    if (deletedFile) {
+      console.log('RESTORING DELETED FILE', deletedFile.uuid)
+      request.put({
+        url: `https://api.uploadcare.com/files/${deletedFile.uuid}/storage/`,
+        headers: {
+          Authorization: `Uploadcare.Simple ${publicKey}:${privateKey}`
+        },
+      }, (err, resp, body) => {
+        if (err) {
+          return callback(err)
+        }
+
+        updateStats(statsFilePath, filePath, {
+          hash: fileHash,
+          uuid: deletedFile.uuid,
+          dateTimeUploaded: Date.now(),
+          publicKeyUsed: publicKey,
+          stored: storeOnUpload && publicKey !== 'demopublickey',
+        })
+
+        return callback(null, deletedFile.uuid)
+      })
+    } else {
+      upload()
+    }
   }
 }
 

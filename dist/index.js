@@ -55,6 +55,10 @@ var _fs = require('fs');
 
 var _fs2 = _interopRequireDefault(_fs);
 
+var _path = require('path');
+
+var _path2 = _interopRequireDefault(_path);
+
 var _colors = require('colors');
 
 var _colors2 = _interopRequireDefault(_colors);
@@ -127,9 +131,9 @@ function updateStats(statsFilePath, key, info) {
 }
 
 // upload or reupload
-function uploadFile(publicKey, filePath) {
-  var storeOnUpload = arguments.length <= 2 || arguments[2] === undefined ? 1 : arguments[2];
-  var callback = arguments[3];
+function uploadFile(publicKey, filePath, fileHash) {
+  var storeOnUpload = arguments.length <= 3 || arguments[3] === undefined ? 1 : arguments[3];
+  var callback = arguments[4];
 
   console.log(('UPLOADING ' + filePath.underline).yellow);
 
@@ -139,7 +143,12 @@ function uploadFile(publicKey, filePath) {
     formData: {
       UPLOADCARE_PUB_KEY: publicKey,
       UPLOADCARE_STORE: storeOnUpload ? 1 : 0,
-      file: _fs2.default.createReadStream(filePath)
+      file: {
+        value: _fs2.default.createReadStream(filePath),
+        options: {
+          filename: fileHash
+        }
+      }
     }
   }, callback);
 }
@@ -165,7 +174,7 @@ function getUploadcareUUID() {
 
 
   var upload = function upload() {
-    uploadFile(publicKey, filePath, storeOnUpload, function (err, resp, body) {
+    uploadFile(publicKey, filePath, fileHash, storeOnUpload, function (err, resp, body) {
       if (err) {
         callback(err);
         return;
@@ -182,7 +191,7 @@ function getUploadcareUUID() {
           uuid: body.file,
           dateTimeUploaded: Date.now(),
           publicKeyUsed: publicKey,
-          stored: storeOnUpload
+          stored: storeOnUpload && publicKey !== 'demopublickey'
         });
       } catch (e) {
         callback(e);
@@ -237,8 +246,40 @@ function getUploadcareUUID() {
       upload();
     }
   } else {
-    console.log(('NEW FILE ' + filePath.underline).green);
-    upload();
+    (function () {
+      console.log(('NEW FILE ' + filePath.underline).green);
+
+      var deletedStats = _path2.default.join(statsFilePath, '..', 'uploadcare-deleted.json');
+      var deletedFile = readStats(deletedStats, fileHash);
+
+      console.log(deletedFile);
+
+      if (deletedFile) {
+        console.log('RESTORING DELETED FILE', deletedFile.uuid);
+        _request2.default.put({
+          url: 'https://api.uploadcare.com/files/' + deletedFile.uuid + '/storage/',
+          headers: {
+            Authorization: 'Uploadcare.Simple ' + publicKey + ':' + privateKey
+          }
+        }, function (err, resp, body) {
+          if (err) {
+            return callback(err);
+          }
+
+          updateStats(statsFilePath, filePath, {
+            hash: fileHash,
+            uuid: deletedFile.uuid,
+            dateTimeUploaded: Date.now(),
+            publicKeyUsed: publicKey,
+            stored: storeOnUpload && publicKey !== 'demopublickey'
+          });
+
+          return callback(null, deletedFile.uuid);
+        });
+      } else {
+        upload();
+      }
+    })();
   }
 }
 

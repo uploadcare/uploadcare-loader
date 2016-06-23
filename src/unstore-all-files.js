@@ -1,61 +1,81 @@
 /* eslint-disable no-console, no-unused-vars */
 import request from 'request'
 import colors from 'colors'
+import chunk from 'lodash/chunk'
+import fs from 'fs'
 
-function iterateThroughPage(url, publicKey, privateKey, deleteNotUnstore) {
-  const headers = {
-    Authorization: `Uploadcare.Simple ${publicKey}:${privateKey}`
+const projectFiles = []
+
+function headers(publicKey, privateKey) {
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Uploadcare.Simple ${publicKey}:${privateKey}`
   }
+}
 
+function unstoreProjectFiles(files, publicKey, privateKey, statsFilePath) {
+  const uuidsToUnstore = chunk(files.map(f => f.uuid), 100)
+
+  uuidsToUnstore.map((uuidsToUnstoreChunk) => {
+    request.del({
+      url: 'https://api.uploadcare.com/files/storage/',
+      headers: headers(publicKey, privateKey),
+      body: JSON.stringify(uuidsToUnstoreChunk),
+    }, (err, resp, body) => {
+
+    })
+  })
+
+  const filesList = {}
+
+  files.map((f) => filesList[f.hash] = f)
+
+  const content = JSON.stringify(filesList, null, 2)
+
+  fs.writeFileSync(statsFilePath, content)
+}
+
+
+function iterateThroughPage(url, publicKey, privateKey, statsFilePath) {
   request.get({
     url,
-    headers
+    headers: headers(publicKey, privateKey)
   }, (err, res, body) => {
-    try {
-      const {
-        results,
-        next,
-      } = JSON.parse(body)
+    const {
+      results,
+      next,
+    } = JSON.parse(body)
 
-      results.map((file) => {
-        const fileUnstoreUrl = `https://api.uploadcare.com/files/${file.uuid}/${deleteNotUnstore ? '' : 'storage/'}`
-        request.del({
-          url: `https://api.uploadcare.com/files/${file.uuid}/`,
-          headers
-        }, (delErr) => {
-          if (delErr) {
-            console.log(`ERROR deleting ${file.uuid.underline}: ${JSON.stringify(delErr)}`.red)
-          } else {
-            console.log(`${file.uuid.underline} were ${deleteNotUnstore ? 'deleted' : 'unstored'}`.green)
-          }
-        })
+    results.map(file => {
+      projectFiles.push({
+        uuid: file.uuid,
+        hash: file.original_filename
       })
+    })
 
-      if (next) {
-        console.log('Goingin to next page'.underline.green)
-
-        iterateThroughPage(next, publicKey, privateKey, deleteNotUnstore)
-      }
-
-    } catch (e) {
-      console.log('Error deleting:'.red, e.stack)
+    if (next) {
+      console.log('next')
+      iterateThroughPage(next, publicKey, privateKey, statsFilePath)
+    } else {
+      console.log('done')
+      unstoreProjectFiles(projectFiles, publicKey, privateKey, statsFilePath)
     }
   })
 }
 
 
-export default function unstoreAllFiles(publicKey = '', privateKey = '', options = {}) {
+export default function unstoreAllFiles(publicKey, privateKey, statsFilePath, options = {}) {
   if (!publicKey.length || !privateKey.length) {
     console.log('no private/pubic key were provided, skipping deleting files')
     return
   }
 
   const {
-    deleteNotUnstore = true,
+    deleteFile = false,
     limit = 100,
   } = options
 
-  const url = `https://api.uploadcare.com/files/?stored=true&limit=${limit}`
+  const url = `https://api.uploadcare.com/files/?removed=false&stored=true&limit=${limit}`
 
-  iterateThroughPage(url, publicKey, privateKey, deleteNotUnstore)
+  iterateThroughPage(url, publicKey, privateKey, statsFilePath)
 }

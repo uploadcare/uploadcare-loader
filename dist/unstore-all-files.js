@@ -13,70 +13,96 @@ var _colors = require('colors');
 
 var _colors2 = _interopRequireDefault(_colors);
 
+var _chunk = require('lodash/chunk');
+
+var _chunk2 = _interopRequireDefault(_chunk);
+
+var _fs = require('fs');
+
+var _fs2 = _interopRequireDefault(_fs);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /* eslint-disable no-console, no-unused-vars */
 
 
-function iterateThroughPage(url, publicKey, privateKey, deleteNotUnstore) {
-  var headers = {
-    Authorization: 'Uploadcare.Simple ' + publicKey + ':' + privateKey
-  };
+var projectFiles = [];
 
+function headers(publicKey, privateKey) {
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': 'Uploadcare.Simple ' + publicKey + ':' + privateKey
+  };
+}
+
+function unstoreProjectFiles(files, publicKey, privateKey, statsFilePath) {
+  var uuidsToUnstore = (0, _chunk2.default)(files.map(function (f) {
+    return f.uuid;
+  }), 100);
+
+  uuidsToUnstore.map(function (uuidsToUnstoreChunk) {
+    _request2.default.del({
+      url: 'https://api.uploadcare.com/files/storage/',
+      headers: headers(publicKey, privateKey),
+      body: JSON.stringify(uuidsToUnstoreChunk)
+    }, function (err, resp, body) {});
+  });
+
+  var filesList = {};
+
+  files.map(function (f) {
+    return filesList[f.hash] = f;
+  });
+
+  var content = JSON.stringify(filesList, null, 2);
+
+  _fs2.default.writeFileSync(statsFilePath, content);
+}
+
+function iterateThroughPage(url, publicKey, privateKey, statsFilePath) {
   _request2.default.get({
     url: url,
-    headers: headers
+    headers: headers(publicKey, privateKey)
   }, function (err, res, body) {
-    try {
-      var _JSON$parse = JSON.parse(body);
+    var _JSON$parse = JSON.parse(body);
 
-      var results = _JSON$parse.results;
-      var next = _JSON$parse.next;
+    var results = _JSON$parse.results;
+    var next = _JSON$parse.next;
 
 
-      results.map(function (file) {
-        var fileUnstoreUrl = 'https://api.uploadcare.com/files/' + file.uuid + '/' + (deleteNotUnstore ? '' : 'storage/');
-        _request2.default.del({
-          url: 'https://api.uploadcare.com/files/' + file.uuid + '/',
-          headers: headers
-        }, function (delErr) {
-          if (delErr) {
-            console.log(('ERROR deleting ' + file.uuid.underline + ': ' + JSON.stringify(delErr)).red);
-          } else {
-            console.log((file.uuid.underline + ' were ' + (deleteNotUnstore ? 'deleted' : 'unstored')).green);
-          }
-        });
+    results.map(function (file) {
+      projectFiles.push({
+        uuid: file.uuid,
+        hash: file.original_filename
       });
+    });
 
-      if (next) {
-        console.log('Goingin to next page'.underline.green);
-
-        iterateThroughPage(next, publicKey, privateKey, deleteNotUnstore);
-      }
-    } catch (e) {
-      console.log('Error deleting:'.red, e.stack);
+    if (next) {
+      console.log('next');
+      iterateThroughPage(next, publicKey, privateKey, statsFilePath);
+    } else {
+      console.log('done');
+      unstoreProjectFiles(projectFiles, publicKey, privateKey, statsFilePath);
     }
   });
 }
 
-function unstoreAllFiles() {
-  var publicKey = arguments.length <= 0 || arguments[0] === undefined ? '' : arguments[0];
-  var privateKey = arguments.length <= 1 || arguments[1] === undefined ? '' : arguments[1];
-  var options = arguments.length <= 2 || arguments[2] === undefined ? {} : arguments[2];
+function unstoreAllFiles(publicKey, privateKey, statsFilePath) {
+  var options = arguments.length <= 3 || arguments[3] === undefined ? {} : arguments[3];
 
   if (!publicKey.length || !privateKey.length) {
     console.log('no private/pubic key were provided, skipping deleting files');
     return;
   }
 
-  var _options$deleteNotUns = options.deleteNotUnstore;
-  var deleteNotUnstore = _options$deleteNotUns === undefined ? true : _options$deleteNotUns;
+  var _options$deleteFile = options.deleteFile;
+  var deleteFile = _options$deleteFile === undefined ? false : _options$deleteFile;
   var _options$limit = options.limit;
   var limit = _options$limit === undefined ? 100 : _options$limit;
 
 
-  var url = 'https://api.uploadcare.com/files/?stored=true&limit=' + limit;
+  var url = 'https://api.uploadcare.com/files/?removed=false&stored=true&limit=' + limit;
 
-  iterateThroughPage(url, publicKey, privateKey, deleteNotUnstore);
+  iterateThroughPage(url, publicKey, privateKey, statsFilePath);
 }
 module.exports = exports['default'];
