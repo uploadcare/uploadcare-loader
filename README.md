@@ -1,3 +1,6 @@
+# Supercharge your static assets with Uploadcare and Webpack
+https://medium.com/webperformance/supercharge-your-static-assets-with-uploadcare-and-webpack-in-no-time-a7f1f0b5b30a
+
 ## Installation
 
 ```bash
